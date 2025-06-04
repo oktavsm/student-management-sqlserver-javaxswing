@@ -9,10 +9,10 @@ import java.awt.Color;
 import javax.swing.*;
 import javax.swing.table.*;
 import java.sql.*;
-import basdatbab13.ComboItem;
-import java.awt.*;
-import java.awt.event.*;
-
+import basdatbab13.ComboItem; // Pastikan kelas ComboItem ada dan sesuai
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.ItemEvent;
 
 /**
  *
@@ -20,16 +20,63 @@ import java.awt.event.*;
  */
 public class MahasiswaPanel extends javax.swing.JPanel {
 
-    /**
-     * Creates new form MahasiswaPanel
-     */
     private Connection conn;
+    private CardLayout cl;
+    private DefaultTableModel model;
+    private DefaultComboBoxModel<ComboItem> modelCombo;
+    private javax.swing.JButton previousButton;
+
+    // Deklarasi JComboBox terpisah untuk setiap panel
+    private javax.swing.JComboBox<String> insertGenderComboBox;
+    private javax.swing.JComboBox<String> updateGenderComboBox;
+    private javax.swing.JComboBox<String> removeGenderComboBox;
+
+
     public MahasiswaPanel(Connection conn) {
-        this.conn=conn;
-        initComponents();
+        this.conn = conn;
+        initComponents(); // initComponents akan menginisialisasi JComboBox yang baru
         cl = (CardLayout) crudPanel.getLayout();
         setInsert();
+        loadTable();
+        addFocusListenersToInsertFields();
     }
+
+    private void addFocusListenersToInsertFields() {
+        addPlaceholderFocusListener(insertNIMField, "NIM");
+        addPlaceholderFocusListener(insertStudentNameField, "Nama Mahasiswa");
+    }
+
+    private void addPlaceholderFocusListener(JTextField textField, String placeholder) {
+        // Simpan warna teks asli
+        Color originalForeground = textField.getForeground();
+        Color placeholderForeground = Color.GRAY;
+
+        // Set placeholder awal jika teks kosong
+        if (textField.getText().isEmpty() || textField.getText().equals(placeholder)) {
+            textField.setText(placeholder);
+            textField.setForeground(placeholderForeground);
+        }
+
+
+        textField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (textField.getText().equals(placeholder)) {
+                    textField.setText("");
+                    textField.setForeground(originalForeground); // Kembalikan warna asli
+                }
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (textField.getText().isEmpty()) {
+                    textField.setText(placeholder);
+                    textField.setForeground(placeholderForeground); // Set warna placeholder
+                }
+            }
+        });
+    }
+
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -42,25 +89,28 @@ public class MahasiswaPanel extends javax.swing.JPanel {
 
         crudPanel = new javax.swing.JPanel();
         insertPanel = new javax.swing.JPanel();
-        insertCourseCode = new javax.swing.JTextField();
+        insertNIMField = new javax.swing.JTextField();
         insertButton = new javax.swing.JButton();
-        insertCourseCode1 = new javax.swing.JTextField();
-        genderComboBox = new javax.swing.JComboBox<>();
+        insertStudentNameField = new javax.swing.JTextField();
+        // Inisialisasi JComboBox untuk insertPanel
+        insertGenderComboBox = new javax.swing.JComboBox<>();
         updatePanel = new javax.swing.JPanel();
         updateButton = new javax.swing.JButton();
-        courseComboBox = new javax.swing.JComboBox<>();
-        courseNameField = new javax.swing.JTextField();
-        courseCodeField = new javax.swing.JTextField();
+        studentNIMComboBox = new javax.swing.JComboBox<ComboItem>();
+        studentNameField = new javax.swing.JTextField();
+        // Inisialisasi JComboBox untuk updatePanel
+        updateGenderComboBox = new javax.swing.JComboBox<>();
         removePanel = new javax.swing.JPanel();
-        updateButton1 = new javax.swing.JButton();
-        courseComboBox1 = new javax.swing.JComboBox<>();
-        courseNameField1 = new javax.swing.JTextField();
-        courseCodeField1 = new javax.swing.JTextField();
+        removeButton = new javax.swing.JButton();
+        studentNIMComboBox1 = new javax.swing.JComboBox<ComboItem>();
+        studentNameField1 = new javax.swing.JTextField();
+        // Inisialisasi JComboBox untuk removePanel
+        removeGenderComboBox = new javax.swing.JComboBox<>();
         toUpdatePanelButton = new javax.swing.JButton();
         toInsertPanelButton = new javax.swing.JButton();
         toRemovePanelButton = new javax.swing.JButton();
         scrollPanel = new javax.swing.JScrollPane();
-        courseTable = new javax.swing.JTable();
+        studentTable = new javax.swing.JTable();
 
         setBackground(new java.awt.Color(51, 51, 51));
         setMaximumSize(new java.awt.Dimension(625, 600));
@@ -71,27 +121,41 @@ public class MahasiswaPanel extends javax.swing.JPanel {
 
         insertPanel.setBackground(new java.awt.Color(51, 51, 51));
 
-        insertCourseCode.setText("NIM");
-        insertCourseCode.addActionListener(new java.awt.event.ActionListener() {
+        // insertNIMField.setText("NIM"); // Placeholder diatur oleh FocusListener
+        insertNIMField.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                insertCourseCodeActionPerformed(evt);
+                insertNIMFieldActionPerformed(evt);
             }
         });
 
         insertButton.setText("Insert Student");
-
-        insertCourseCode1.setText("Nama Mahasiswa");
-        insertCourseCode1.setPreferredSize(new java.awt.Dimension(180, 22));
-        insertCourseCode1.addActionListener(new java.awt.event.ActionListener() {
+        insertButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                insertCourseCode1ActionPerformed(evt);
+                // Menggunakan insertNIMField, insertStudentNameField, dan insertGenderComboBox
+                String nim = insertNIMField.getText();
+                String name = insertStudentNameField.getText();
+
+                if (nim.equals("NIM") || name.equals("Nama Mahasiswa") || nim.isEmpty() || name.isEmpty() ) {
+                    JOptionPane.showMessageDialog(insertButton, "NIM dan Nama tidak boleh kosong atau placeholder", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                String gender = insertGenderComboBox.getSelectedItem().toString().equals("Laki-Laki") ? "L" : "P";
+                insert(nim,name,gender);
             }
         });
 
-        genderComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Laki-Laki", "Perempuan" }));
-        genderComboBox.addActionListener(new java.awt.event.ActionListener() {
+        // insertStudentNameField.setText("Nama Mahasiswa"); // Placeholder diatur oleh FocusListener
+        insertStudentNameField.setPreferredSize(new java.awt.Dimension(180, 22));
+        insertStudentNameField.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                genderComboBoxActionPerformed(evt);
+                insertStudentNameFieldActionPerformed(evt);
+            }
+        });
+
+        insertGenderComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Laki-Laki", "Perempuan" }));
+        insertGenderComboBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                // genderComboBoxActionPerformed(evt); // Dulu genderComboBox, sekarang insertGenderComboBox
             }
         });
 
@@ -101,19 +165,19 @@ public class MahasiswaPanel extends javax.swing.JPanel {
             insertPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(insertButton, javax.swing.GroupLayout.DEFAULT_SIZE, 598, Short.MAX_VALUE)
             .addGroup(insertPanelLayout.createSequentialGroup()
-                .addComponent(insertCourseCode)
+                .addComponent(insertNIMField)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(insertCourseCode1, javax.swing.GroupLayout.PREFERRED_SIZE, 179, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(insertStudentNameField, javax.swing.GroupLayout.PREFERRED_SIZE, 179, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(genderComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, 183, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addComponent(insertGenderComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, 183, javax.swing.GroupLayout.PREFERRED_SIZE)) // Menggunakan insertGenderComboBox
         );
         insertPanelLayout.setVerticalGroup(
             insertPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(insertPanelLayout.createSequentialGroup()
                 .addGroup(insertPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(insertCourseCode, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(insertCourseCode1, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(genderComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(insertNIMField, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(insertStudentNameField, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(insertGenderComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)) // Menggunakan insertGenderComboBox
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(insertButton, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
@@ -124,29 +188,61 @@ public class MahasiswaPanel extends javax.swing.JPanel {
         updatePanel.setPreferredSize(new java.awt.Dimension(607, 66));
 
         updateButton.setText("Update Student");
+        updateButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                if (studentNIMComboBox.getSelectedItem() == null) {
+                    JOptionPane.showMessageDialog(updateButton, "Pilih NIM terlebih dahulu", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                String nim = ((ComboItem) studentNIMComboBox.getSelectedItem()).getKey();
+                String name = studentNameField.getText();
+                // Menggunakan updateGenderComboBox
+                String gender = updateGenderComboBox.getSelectedItem().toString().equals("Laki-Laki") ? "L" : "P";
+                if (nim.isEmpty() || name.isEmpty()) {
+                    JOptionPane.showMessageDialog(updateButton, "NIM dan Nama tidak boleh kosong", "Error", JOptionPane.ERROR_MESSAGE);
+                } else {
+                    update(nim,name,gender);
+                }
+            }
+        });
 
-        courseComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
-        courseComboBox.setPreferredSize(new java.awt.Dimension(72, 30));
+        modelCombo = new DefaultComboBoxModel<ComboItem>(); // Inisialisasi modelCombo di sini atau di konstruktor
+        studentNIMComboBox.setModel(modelCombo);
+        studentNIMComboBox.setPreferredSize(new java.awt.Dimension(72, 30));
+        studentNIMComboBox.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                if (evt.getStateChange() == ItemEvent.SELECTED) {
+                    ComboItem selectedItem = (ComboItem) studentNIMComboBox.getSelectedItem();
+                    if (selectedItem != null) {
+                        studentNameField.setText(selectedItem.getValue());
+                        // Menggunakan updateGenderComboBox
+                        updateGenderComboBox.setSelectedItem(selectedItem.getValue1()); // Value1 dari ComboItem adalah "Laki - laki" atau "Perempuan"
+                    }
+                }
+            }
+        });
+
+        updateGenderComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Laki-Laki", "Perempuan" }));
 
         javax.swing.GroupLayout updatePanelLayout = new javax.swing.GroupLayout(updatePanel);
         updatePanel.setLayout(updatePanelLayout);
         updatePanelLayout.setHorizontalGroup(
             updatePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(updatePanelLayout.createSequentialGroup()
-                .addComponent(courseComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, 213, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(studentNIMComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, 213, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(courseCodeField, javax.swing.GroupLayout.PREFERRED_SIZE, 181, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(studentNameField, javax.swing.GroupLayout.PREFERRED_SIZE, 181, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(courseNameField, javax.swing.GroupLayout.DEFAULT_SIZE, 180, Short.MAX_VALUE))
+                .addComponent(updateGenderComboBox, 0, 180, Short.MAX_VALUE)) // Menggunakan updateGenderComboBox
             .addComponent(updateButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         updatePanelLayout.setVerticalGroup(
             updatePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(updatePanelLayout.createSequentialGroup()
                 .addGroup(updatePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(courseComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(courseNameField, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(courseCodeField, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(studentNIMComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(updateGenderComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE) // Menggunakan updateGenderComboBox
+                    .addComponent(studentNameField, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(updateButton, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
@@ -156,32 +252,62 @@ public class MahasiswaPanel extends javax.swing.JPanel {
         removePanel.setBackground(new java.awt.Color(51, 51, 51));
         removePanel.setPreferredSize(new java.awt.Dimension(607, 66));
 
-        updateButton1.setText("Remove Student");
+        removeButton.setText("Remove Student");
+        removeButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                 if (studentNIMComboBox1.getSelectedItem() == null) {
+                    JOptionPane.showMessageDialog(removeButton, "Pilih NIM terlebih dahulu", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                String nim = ((ComboItem) studentNIMComboBox1.getSelectedItem()).getKey();
+                // Validasi tidak perlu lagi karena diambil dari ComboBox
+                remove(nim);
+            }
+        });
 
-        courseComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
-        courseComboBox1.setPreferredSize(new java.awt.Dimension(72, 30));
+        studentNIMComboBox1.setModel(modelCombo); // Menggunakan modelCombo yang sama
+        studentNIMComboBox1.setPreferredSize(new java.awt.Dimension(72, 30));
+        studentNIMComboBox1.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                if (evt.getStateChange() == ItemEvent.SELECTED) {
+                    ComboItem selectedItem = (ComboItem) studentNIMComboBox1.getSelectedItem();
+                    if (selectedItem != null) {
+                        studentNameField1.setText(selectedItem.getValue());
+                        studentNameField1.setEditable(false); // Nama tidak diedit di panel remove
+                        // Menggunakan removeGenderComboBox
+                        removeGenderComboBox.setSelectedItem(selectedItem.getValue1());
+                        removeGenderComboBox.setEnabled(false); // Gender tidak diedit di panel remove
+                    }
+                }
+            }
+        });
+
+        removeGenderComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Laki-Laki", "Perempuan" }));
+        removeGenderComboBox.setEnabled(false); // Defaultnya non-aktif di remove panel
+
+        studentNameField1.setEditable(false); // Nama field di remove panel tidak bisa diedit
 
         javax.swing.GroupLayout removePanelLayout = new javax.swing.GroupLayout(removePanel);
         removePanel.setLayout(removePanelLayout);
         removePanelLayout.setHorizontalGroup(
             removePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(removePanelLayout.createSequentialGroup()
-                .addComponent(courseComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, 213, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(studentNIMComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, 213, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(courseCodeField1, javax.swing.GroupLayout.PREFERRED_SIZE, 179, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(studentNameField1, javax.swing.GroupLayout.PREFERRED_SIZE, 179, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(courseNameField1, javax.swing.GroupLayout.DEFAULT_SIZE, 182, Short.MAX_VALUE))
-            .addComponent(updateButton1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(removeGenderComboBox, 0, 182, Short.MAX_VALUE)) // Menggunakan removeGenderComboBox
+            .addComponent(removeButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         removePanelLayout.setVerticalGroup(
             removePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(removePanelLayout.createSequentialGroup()
                 .addGroup(removePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(courseComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(courseNameField1, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(courseCodeField1, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(studentNIMComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(removeGenderComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE) // Menggunakan removeGenderComboBox
+                    .addComponent(studentNameField1, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(updateButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addComponent(removeButton, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
 
         crudPanel.add(removePanel, "removeCard");
@@ -194,7 +320,8 @@ public class MahasiswaPanel extends javax.swing.JPanel {
             }
         });
 
-        toInsertPanelButton.setBackground(new java.awt.Color(51, 51, 51));
+        toInsertPanelButton.setBackground(new java.awt.Color(51, 51, 51)); // Awalnya insert aktif
+        toInsertPanelButton.setForeground(Color.WHITE); // Warna teks untuk tombol aktif
         toInsertPanelButton.setText("Insert Data");
         toInsertPanelButton.setPreferredSize(new java.awt.Dimension(180, 30));
         toInsertPanelButton.addActionListener(new java.awt.event.ActionListener() {
@@ -211,50 +338,10 @@ public class MahasiswaPanel extends javax.swing.JPanel {
             }
         });
 
-        courseTable.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(153, 153, 153), 1, true));
-        courseTable.setModel(new javax.swing.table.DefaultTableModel(
+        studentTable.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(153, 153, 153), 1, true));
+        model = new javax.swing.table.DefaultTableModel( // Inisialisasi model di sini atau di konstruktor
             new Object [][] {
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null}
+                // Data awal bisa kosong atau diisi dari database saat loadTable
             },
             new String [] {
                 "NIM", "Nama", "Gender"
@@ -267,13 +354,14 @@ public class MahasiswaPanel extends javax.swing.JPanel {
             public boolean isCellEditable(int rowIndex, int columnIndex) {
                 return canEdit [columnIndex];
             }
-        });
-        courseTable.setEnabled(false);
-        courseTable.setGridColor(new java.awt.Color(153, 153, 153));
-        courseTable.setPreferredSize(new java.awt.Dimension(150, 607));
-        courseTable.setSelectionForeground(new java.awt.Color(153, 153, 153));
-        courseTable.setShowGrid(true);
-        scrollPanel.setViewportView(courseTable);
+        };
+        studentTable.setModel(model);
+        // studentTable.setEnabled(false); // Sebaiknya true agar bisa dipilih, tapi tidak bisa diedit selnya
+        studentTable.setGridColor(new java.awt.Color(153, 153, 153));
+        studentTable.setPreferredSize(new java.awt.Dimension(150, 607)); // Mungkin perlu disesuaikan
+        studentTable.setSelectionForeground(new java.awt.Color(153, 153, 153)); // Mungkin perlu disesuaikan
+        studentTable.setShowGrid(true);
+        scrollPanel.setViewportView(studentTable);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -284,12 +372,12 @@ public class MahasiswaPanel extends javax.swing.JPanel {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
                     .addComponent(crudPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(toInsertPanelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 214, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(toUpdatePanelButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(toRemovePanelButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(scrollPanel))
+                        .addComponent(toInsertPanelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 197, javax.swing.GroupLayout.PREFERRED_SIZE) // Adjusted size
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(toUpdatePanelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 196, javax.swing.GroupLayout.PREFERRED_SIZE) // Adjusted size
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(toRemovePanelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 196, javax.swing.GroupLayout.PREFERRED_SIZE)) // Adjusted size
+                    .addComponent(scrollPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 598, Short.MAX_VALUE)) // Ensure crudPanel and scrollPanel have consistent width
                 .addGap(15, 15, 15))
         );
         layout.setVerticalGroup(
@@ -303,88 +391,207 @@ public class MahasiswaPanel extends javax.swing.JPanel {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(crudPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(scrollPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 486, Short.MAX_VALUE))
+                .addComponent(scrollPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 480, Short.MAX_VALUE) // Adjusted height
+                .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
 
-    private void insertCourseCodeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_insertCourseCodeActionPerformed
+    private void insertNIMFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_insertNIMFieldActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_insertCourseCodeActionPerformed
+    }//GEN-LAST:event_insertNIMFieldActionPerformed
 
     private void toUpdatePanelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_toUpdatePanelButtonActionPerformed
-        // TODO add your handling code here:
         setUpdate();
     }//GEN-LAST:event_toUpdatePanelButtonActionPerformed
 
     private void toInsertPanelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_toInsertPanelButtonActionPerformed
-        // TODO add your handling code here:
         setInsert();
     }//GEN-LAST:event_toInsertPanelButtonActionPerformed
 
     private void toRemovePanelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_toRemovePanelButtonActionPerformed
-        // TODO add your handling code here:
         setRemove();
     }//GEN-LAST:event_toRemovePanelButtonActionPerformed
 
-    private void insertCourseCode1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_insertCourseCode1ActionPerformed
+    private void insertStudentNameFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_insertStudentNameFieldActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_insertCourseCode1ActionPerformed
+    }//GEN-LAST:event_insertStudentNameFieldActionPerformed
 
-    private void genderComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_genderComboBoxActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_genderComboBoxActionPerformed
+    // Metode genderComboBoxActionPerformed tidak lagi relevan untuk satu JComboBox global
+    // private void genderComboBoxActionPerformed(java.awt.event.ActionEvent evt) {}
 
-    void setInsert(){
-       toInsertPanelButton.setBackground(new Color(51,51,51));
-       if(previousButton!=null)
-       previousButton.setBackground(new Color(78,80,82));
-       cl.show(crudPanel, "insertCard");
-       previousButton=toInsertPanelButton;
-       revalidate();
-       repaint();
+    void setButtonActive(JButton currentActiveButton) {
+        JButton[] buttons = {toInsertPanelButton, toUpdatePanelButton, toRemovePanelButton};
+        for (JButton button : buttons) {
+            if (button == currentActiveButton) {
+                button.setBackground(new Color(51, 51, 51)); // Warna aktif
+                button.setForeground(Color.WHITE); // Teks putih untuk kontras
+            } else {
+                button.setBackground(new Color(78, 80, 82)); // Warna non-aktif
+                button.setForeground(Color.BLACK); // Teks hitam atau default
+            }
+        }
+        previousButton = currentActiveButton;
     }
-    void setUpdate(){
-       toUpdatePanelButton.setBackground(new Color(51,51,51));
-       if(previousButton!=null)
-       previousButton.setBackground(new Color(78,80,82));
-       cl.show(crudPanel, "updateCard");
-       previousButton=toUpdatePanelButton;
-       revalidate();
-       repaint();
+
+    void setInsert() {
+        setButtonActive(toInsertPanelButton);
+        cl.show(crudPanel, "insertCard");
+        // Reset fields in insert panel
+        if (!insertNIMField.getText().equals("NIM")) insertNIMField.setText("NIM"); // Reset placeholder
+        if (!insertStudentNameField.getText().equals("Nama Mahasiswa")) insertStudentNameField.setText("Nama Mahasiswa"); // Reset placeholder
+        addPlaceholderFocusListener(insertNIMField, "NIM"); // Re-apply listener if needed
+        addPlaceholderFocusListener(insertStudentNameField, "Nama Mahasiswa"); // Re-apply listener if needed
+        insertGenderComboBox.setSelectedIndex(0);
+        revalidate();
+        repaint();
     }
-    
-    void setRemove(){
-        toRemovePanelButton.setBackground(new Color(51,51,51));
-       if(previousButton!=null)
-        previousButton.setBackground(new Color(78,80,82));
-       cl.show(crudPanel, "removeCard");
-       previousButton=toRemovePanelButton;
-       revalidate();
-       repaint();
+
+    void setUpdate() {
+        setButtonActive(toUpdatePanelButton);
+        cl.show(crudPanel, "updateCard");
+        if (studentNIMComboBox.getItemCount() > 0) {
+             studentNIMComboBox.setSelectedIndex(0); // Pilih item pertama jika ada
+             // Trigger itemStateChanged untuk memuat data ke field
+             ComboItem selectedItem = (ComboItem) studentNIMComboBox.getSelectedItem();
+             if (selectedItem != null) {
+                 studentNameField.setText(selectedItem.getValue());
+                 updateGenderComboBox.setSelectedItem(selectedItem.getValue1());
+             }
+        } else {
+            studentNameField.setText("");
+            // updateGenderComboBox.setSelectedIndex(0); // Atau biarkan kosong
+        }
+        revalidate();
+        repaint();
     }
-    private javax.swing.JButton previousButton; 
-    private CardLayout cl;
+
+    void setRemove() {
+        setButtonActive(toRemovePanelButton);
+        cl.show(crudPanel, "removeCard");
+         if (studentNIMComboBox1.getItemCount() > 0) {
+            studentNIMComboBox1.setSelectedIndex(0); // Pilih item pertama jika ada
+            ComboItem selectedItem = (ComboItem) studentNIMComboBox1.getSelectedItem();
+            if (selectedItem != null) {
+                studentNameField1.setText(selectedItem.getValue());
+                removeGenderComboBox.setSelectedItem(selectedItem.getValue1());
+                removeGenderComboBox.setEnabled(false); // Pastikan non-aktif
+                studentNameField1.setEditable(false); // Pastikan non-aktif
+            }
+        } else {
+            studentNameField1.setText("");
+            // removeGenderComboBox.setSelectedIndex(0); // Atau biarkan kosong
+        }
+        revalidate();
+        repaint();
+    }
+
+    void loadTable() {
+        model.setRowCount(0); 
+        modelCombo.removeAllElements(); 
+        try {
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT nim, nama, jenis_kelamin FROM mahasiswa");
+            while (rs.next()) {
+                String nim = rs.getString("nim");
+                String nama = rs.getString("nama");
+                String jenisKelaminDb = rs.getString("jenis_kelamin");
+                String genderDisplay = (jenisKelaminDb != null && jenisKelaminDb.equalsIgnoreCase("L")) ? "Laki-Laki" : "Perempuan";
+                
+                model.addRow(new Object[]{nim, nama, genderDisplay});
+                modelCombo.addElement(new ComboItem(nim, nama, genderDisplay)); // Simpan display value untuk gender
+            }
+            rs.close();
+            stmt.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Gagal memuat data mahasiswa: " + e.getMessage(), "Error Database", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    void insert(String nim, String name, String genderDB) { // genderDB adalah 'L' atau 'P'
+        String sql = "INSERT INTO mahasiswa (nim, nama, jenis_kelamin) VALUES (?, ?, ?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, nim);
+            pstmt.setString(2, name);
+            pstmt.setString(3, genderDB);
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows > 0) {
+                JOptionPane.showMessageDialog(this, "Data mahasiswa berhasil ditambahkan!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+                loadTable(); 
+                // Reset input fields after successful insert
+                if (!insertNIMField.getText().equals("NIM")) insertNIMField.setText("NIM");
+                if (!insertStudentNameField.getText().equals("Nama Mahasiswa")) insertStudentNameField.setText("Nama Mahasiswa");
+                addPlaceholderFocusListener(insertNIMField, "NIM");
+                addPlaceholderFocusListener(insertStudentNameField, "Nama Mahasiswa");
+                insertGenderComboBox.setSelectedIndex(0);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Gagal menambahkan data mahasiswa: " + e.getMessage(), "Error Database", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    void update(String nim, String name, String genderDB) { // genderDB adalah 'L' atau 'P'
+        // Perbaikan nama kolom 'gender' menjadi 'jenis_kelamin'
+        String sql = "UPDATE mahasiswa SET nama = ?, jenis_kelamin = ? WHERE nim = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, name);
+            pstmt.setString(2, genderDB);
+            pstmt.setString(3, nim);
+            int affectedRows = pstmt.executeUpdate();
+             if (affectedRows > 0) {
+                JOptionPane.showMessageDialog(this, "Data mahasiswa berhasil diperbarui!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+                loadTable(); 
+            } else {
+                JOptionPane.showMessageDialog(this, "Data mahasiswa dengan NIM " + nim + " tidak ditemukan.", "Gagal Update", JOptionPane.WARNING_MESSAGE);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Gagal memperbarui data mahasiswa: " + e.getMessage(), "Error Database", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    void remove(String nim) {
+        String sql = "DELETE FROM mahasiswa WHERE nim = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, nim);
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows > 0) {
+                JOptionPane.showMessageDialog(this, "Data mahasiswa berhasil dihapus!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+                loadTable(); 
+            } else {
+                JOptionPane.showMessageDialog(this, "Data mahasiswa dengan NIM " + nim + " tidak ditemukan.", "Gagal Hapus", JOptionPane.WARNING_MESSAGE);
+            }
+        } catch (SQLException e) {
+            // Cek apakah error disebabkan oleh foreign key constraint
+            if (e.getMessage().toLowerCase().contains("foreign key constraint") || 
+                (e.getSQLState() != null && e.getSQLState().equals("23000"))) { // Kode SQLState umum untuk integrity constraint violation
+                JOptionPane.showMessageDialog(this, "Gagal menghapus data mahasiswa: Mahasiswa ini masih memiliki data nilai terkait.", "Error Relasi Data", JOptionPane.ERROR_MESSAGE);
+            } else {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Gagal menghapus data mahasiswa: " + e.getMessage(), "Error Database", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JTextField courseCodeField;
-    private javax.swing.JTextField courseCodeField1;
-    private javax.swing.JComboBox<String> courseComboBox;
-    private javax.swing.JComboBox<String> courseComboBox1;
-    private javax.swing.JTextField courseNameField;
-    private javax.swing.JTextField courseNameField1;
-    private javax.swing.JTable courseTable;
     private javax.swing.JPanel crudPanel;
-    private javax.swing.JComboBox<String> genderComboBox;
     private javax.swing.JButton insertButton;
-    private javax.swing.JTextField insertCourseCode;
-    private javax.swing.JTextField insertCourseCode1;
+    private javax.swing.JTextField insertNIMField;
     private javax.swing.JPanel insertPanel;
+    private javax.swing.JTextField insertStudentNameField;
+    private javax.swing.JButton removeButton;
     private javax.swing.JPanel removePanel;
     private javax.swing.JScrollPane scrollPanel;
+    private javax.swing.JComboBox<basdatbab13.ComboItem> studentNIMComboBox;
+    private javax.swing.JComboBox<basdatbab13.ComboItem> studentNIMComboBox1;
+    private javax.swing.JTextField studentNameField;
+    private javax.swing.JTextField studentNameField1;
+    private javax.swing.JTable studentTable;
     private javax.swing.JButton toInsertPanelButton;
     private javax.swing.JButton toRemovePanelButton;
     private javax.swing.JButton toUpdatePanelButton;
     private javax.swing.JButton updateButton;
-    private javax.swing.JButton updateButton1;
     private javax.swing.JPanel updatePanel;
     // End of variables declaration//GEN-END:variables
 }

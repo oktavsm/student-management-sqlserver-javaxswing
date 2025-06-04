@@ -41,7 +41,7 @@ public class MainFrame extends javax.swing.JFrame {
     }
     
     void setStudent(){
-        PanelKanan.add(new MahasiswaPanel(),"student");
+        PanelKanan.add(new MahasiswaPanel(getConnection()),"student");
         kanan.show(PanelKanan, "student");
         PanelKanan.revalidate();
         PanelKanan.repaint();
@@ -54,7 +54,7 @@ public class MainFrame extends javax.swing.JFrame {
     }
     
     void setTakes(){
-        PanelKanan.add(new NilaiPanel(),"takes");
+        PanelKanan.add(new NilaiPanel(getConnection()),"takes");
         kanan.show(PanelKanan, "takes");
         PanelKanan.revalidate();
         PanelKanan.repaint();
@@ -144,7 +144,7 @@ public class MainFrame extends javax.swing.JFrame {
         disconnectButton.setText("Disconnect");
         disconnectButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                disconnectButtonActionPerformed(evt);
+                disconnectButtonActionPerformed( evt);
             }
         });
 

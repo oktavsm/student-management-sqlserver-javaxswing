@@ -86,9 +86,9 @@
               <Group type="103" groupAlignment="0" attributes="0">
                   <Component id="insertButton" pref="598" max="32767" attributes="0"/>
                   <Group type="102" attributes="0">
-                      <Component id="insertCourseCode" max="32767" attributes="0"/>
+                      <Component id="insertNIMField" max="32767" attributes="0"/>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                      <Component id="insertCourseCode1" min="-2" pref="179" max="-2" attributes="0"/>
+                      <Component id="insertStudentNameField" min="-2" pref="179" max="-2" attributes="0"/>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
                       <Component id="genderComboBox" min="-2" pref="183" max="-2" attributes="0"/>
                   </Group>
@@ -98,8 +98,8 @@
               <Group type="103" groupAlignment="0" attributes="0">
                   <Group type="102" alignment="0" attributes="0">
                       <Group type="103" groupAlignment="3" attributes="0">
-                          <Component id="insertCourseCode" alignment="3" min="-2" pref="30" max="-2" attributes="0"/>
-                          <Component id="insertCourseCode1" alignment="3" min="-2" pref="30" max="-2" attributes="0"/>
+                          <Component id="insertNIMField" alignment="3" min="-2" pref="30" max="-2" attributes="0"/>
+                          <Component id="insertStudentNameField" alignment="3" min="-2" pref="30" max="-2" attributes="0"/>
                           <Component id="genderComboBox" alignment="3" min="-2" pref="30" max="-2" attributes="0"/>
                       </Group>
                       <EmptySpace max="-2" attributes="0"/>
@@ -109,12 +109,12 @@
             </DimensionLayout>
           </Layout>
           <SubComponents>
-            <Component class="javax.swing.JTextField" name="insertCourseCode">
+            <Component class="javax.swing.JTextField" name="insertNIMField">
               <Properties>
                 <Property name="text" type="java.lang.String" value="NIM"/>
               </Properties>
               <Events>
-                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="insertCourseCodeActionPerformed"/>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="insertNIMFieldActionPerformed"/>
               </Events>
             </Component>
             <Component class="javax.swing.JButton" name="insertButton">
@@ -122,7 +122,7 @@
                 <Property name="text" type="java.lang.String" value="Insert Student"/>
               </Properties>
             </Component>
-            <Component class="javax.swing.JTextField" name="insertCourseCode1">
+            <Component class="javax.swing.JTextField" name="insertStudentNameField">
               <Properties>
                 <Property name="text" type="java.lang.String" value="Nama Mahasiswa"/>
                 <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
@@ -130,7 +130,7 @@
                 </Property>
               </Properties>
               <Events>
-                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="insertCourseCode1ActionPerformed"/>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="insertStudentNameFieldActionPerformed"/>
               </Events>
             </Component>
             <Component class="javax.swing.JComboBox" name="genderComboBox">
@@ -170,11 +170,11 @@
             <DimensionLayout dim="0">
               <Group type="103" groupAlignment="0" attributes="0">
                   <Group type="102" attributes="0">
-                      <Component id="courseComboBox" min="-2" pref="213" max="-2" attributes="0"/>
+                      <Component id="studentNIMComboBox" min="-2" pref="213" max="-2" attributes="0"/>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                      <Component id="courseCodeField" min="-2" pref="181" max="-2" attributes="0"/>
+                      <Component id="studentNameField" min="-2" pref="181" max="-2" attributes="0"/>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                      <Component id="courseNameField" pref="180" max="32767" attributes="0"/>
+                      <Component id="GenderField" pref="180" max="32767" attributes="0"/>
                   </Group>
                   <Component id="updateButton" max="32767" attributes="0"/>
               </Group>
@@ -183,9 +183,9 @@
               <Group type="103" groupAlignment="0" attributes="0">
                   <Group type="102" alignment="0" attributes="0">
                       <Group type="103" groupAlignment="3" attributes="0">
-                          <Component id="courseComboBox" alignment="3" min="-2" max="-2" attributes="0"/>
-                          <Component id="courseNameField" alignment="3" min="-2" pref="30" max="-2" attributes="0"/>
-                          <Component id="courseCodeField" alignment="3" min="-2" pref="30" max="-2" attributes="0"/>
+                          <Component id="studentNIMComboBox" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="GenderField" alignment="3" min="-2" pref="30" max="-2" attributes="0"/>
+                          <Component id="studentNameField" alignment="3" min="-2" pref="30" max="-2" attributes="0"/>
                       </Group>
                       <EmptySpace max="32767" attributes="0"/>
                       <Component id="updateButton" min="-2" pref="30" max="-2" attributes="0"/>
@@ -199,7 +199,7 @@
                 <Property name="text" type="java.lang.String" value="Update Student"/>
               </Properties>
             </Component>
-            <Component class="javax.swing.JComboBox" name="courseComboBox">
+            <Component class="javax.swing.JComboBox" name="studentNIMComboBox">
               <Properties>
                 <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
                   <StringArray count="4">
@@ -217,9 +217,9 @@
                 <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;String&gt;"/>
               </AuxValues>
             </Component>
-            <Component class="javax.swing.JTextField" name="courseNameField">
+            <Component class="javax.swing.JTextField" name="GenderField">
             </Component>
-            <Component class="javax.swing.JTextField" name="courseCodeField">
+            <Component class="javax.swing.JTextField" name="studentNameField">
             </Component>
           </SubComponents>
         </Container>
@@ -242,36 +242,36 @@
             <DimensionLayout dim="0">
               <Group type="103" groupAlignment="0" attributes="0">
                   <Group type="102" attributes="0">
-                      <Component id="courseComboBox1" min="-2" pref="213" max="-2" attributes="0"/>
+                      <Component id="studentNIMComboBox1" min="-2" pref="213" max="-2" attributes="0"/>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                      <Component id="courseCodeField1" min="-2" pref="179" max="-2" attributes="0"/>
+                      <Component id="studentNameField1" min="-2" pref="179" max="-2" attributes="0"/>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                      <Component id="courseNameField1" pref="182" max="32767" attributes="0"/>
+                      <Component id="genderField1" pref="182" max="32767" attributes="0"/>
                   </Group>
-                  <Component id="updateButton1" max="32767" attributes="0"/>
+                  <Component id="removeButton" max="32767" attributes="0"/>
               </Group>
             </DimensionLayout>
             <DimensionLayout dim="1">
               <Group type="103" groupAlignment="0" attributes="0">
                   <Group type="102" alignment="0" attributes="0">
                       <Group type="103" groupAlignment="3" attributes="0">
-                          <Component id="courseComboBox1" alignment="3" min="-2" max="-2" attributes="0"/>
-                          <Component id="courseNameField1" alignment="3" min="-2" pref="30" max="-2" attributes="0"/>
-                          <Component id="courseCodeField1" alignment="3" min="-2" pref="30" max="-2" attributes="0"/>
+                          <Component id="studentNIMComboBox1" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="genderField1" alignment="3" min="-2" pref="30" max="-2" attributes="0"/>
+                          <Component id="studentNameField1" alignment="3" min="-2" pref="30" max="-2" attributes="0"/>
                       </Group>
                       <EmptySpace max="32767" attributes="0"/>
-                      <Component id="updateButton1" min="-2" pref="30" max="-2" attributes="0"/>
+                      <Component id="removeButton" min="-2" pref="30" max="-2" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
           </Layout>
           <SubComponents>
-            <Component class="javax.swing.JButton" name="updateButton1">
+            <Component class="javax.swing.JButton" name="removeButton">
               <Properties>
                 <Property name="text" type="java.lang.String" value="Remove Student"/>
               </Properties>
             </Component>
-            <Component class="javax.swing.JComboBox" name="courseComboBox1">
+            <Component class="javax.swing.JComboBox" name="studentNIMComboBox1">
               <Properties>
                 <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
                   <StringArray count="4">
@@ -289,9 +289,9 @@
                 <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;String&gt;"/>
               </AuxValues>
             </Component>
-            <Component class="javax.swing.JTextField" name="courseNameField1">
+            <Component class="javax.swing.JTextField" name="genderField1">
             </Component>
-            <Component class="javax.swing.JTextField" name="courseCodeField1">
+            <Component class="javax.swing.JTextField" name="studentNameField1">
             </Component>
           </SubComponents>
         </Container>
@@ -340,7 +340,7 @@
 
       <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
       <SubComponents>
-        <Component class="javax.swing.JTable" name="courseTable">
+        <Component class="javax.swing.JTable" name="studentTable">
           <Properties>
             <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
               <Border info="org.netbeans.modules.form.compat2.border.LineBorderInfo">

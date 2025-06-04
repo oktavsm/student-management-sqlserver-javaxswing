@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JPanel.java to edit this template
- */
 package basdatbab13.CRUDFolder.MataKuliah;
 
 import java.awt.CardLayout;
@@ -9,10 +5,10 @@ import java.awt.Color;
 import javax.swing.*;
 import javax.swing.table.*;
 import java.sql.*;
-import basdatbab13.ComboItem;
-import java.awt.*;
-import java.awt.event.*;
-
+import basdatbab13.ComboItem; // Pastikan kelas ComboItem ada dan sesuai
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.ItemEvent;
 
 /**
  *
@@ -20,17 +16,256 @@ import java.awt.event.*;
  */
 public class CourseCRUD extends javax.swing.JPanel {
 
-    /**
-     * Creates new form CourseCRUD
-     */
     private Connection conn;
+    private CardLayout cl;
+    private DefaultTableModel tableModel; // Mengganti nama 'model' menjadi 'tableModel'
+    private DefaultComboBoxModel<ComboItem> courseComboBoxModel; // Mengganti nama 'modelCombo'
+
+    private javax.swing.JButton previousButton;
 
     public CourseCRUD(Connection conn) {
-        this.conn=conn;
-        initComponents();
+        this.conn = conn;
+        initComponents(); // Inisialisasi komponen GUI
+
         cl = (CardLayout) crudPanel.getLayout();
-        setInsert();
-        loadTable();    
+
+        // Ambil/set referensi model untuk tabel dan combo box
+        tableModel = (DefaultTableModel) courseTable.getModel();
+        
+        // Inisialisasi dan set model untuk JComboBox jika belum di initComponents
+        // Diasumsikan modelCombo (sekarang courseComboBoxModel) diinisialisasi di initComponents
+        // dan di-set ke courseComboBox. Jika tidak, inisialisasi di sini.
+        if (courseComboBox.getModel() instanceof DefaultComboBoxModel) {
+            courseComboBoxModel = (DefaultComboBoxModel<ComboItem>) courseComboBox.getModel();
+        } else {
+            courseComboBoxModel = new DefaultComboBoxModel<>();
+            courseComboBox.setModel(courseComboBoxModel);
+        }
+        // Pastikan courseComboBox1 juga menggunakan model yang sama
+        courseComboBox1.setModel(courseComboBoxModel);
+
+
+        addFocusListenersToInsertFields();
+        addItemListenersToCourseComboBoxes();
+        
+        loadData(); // Memuat data awal untuk tabel dan ComboBox
+
+        setInsert(); // Atur panel default ke insert
+    }
+
+    private void addFocusListenersToInsertFields() {
+        addPlaceholderFocusListener(insertCourseCode, "Kode Mata Kuliah");
+        addPlaceholderFocusListener(insertCourseName, "Nama Mata Kuliah");
+    }
+    
+    private void addItemListenersToCourseComboBoxes() {
+        // Listener untuk ComboBox di panel UPDATE
+        courseComboBox.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                if (evt.getStateChange() == ItemEvent.SELECTED) {
+                    ComboItem selectedItem = (ComboItem) courseComboBox.getSelectedItem();
+                    if (selectedItem != null) {
+                        courseNameField.setText(selectedItem.getValue());
+                    } else {
+                        courseNameField.setText(""); // Kosongkan jika tidak ada yang dipilih
+                    }
+                }
+            }
+        });
+
+        // Listener untuk ComboBox di panel REMOVE
+        courseComboBox1.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                if (evt.getStateChange() == ItemEvent.SELECTED) {
+                    ComboItem selectedItem = (ComboItem) courseComboBox1.getSelectedItem();
+                    if (selectedItem != null) {
+                        courseNameField1.setText(selectedItem.getValue());
+                    } else {
+                        courseNameField1.setText("");
+                    }
+                }
+            }
+        });
+    }
+
+    private void addPlaceholderFocusListener(JTextField textField, String placeholder) {
+        Color originalForeground = textField.getForeground();
+        Color placeholderForeground = Color.GRAY;
+
+        if (textField.getText().isEmpty() || textField.getText().equals(placeholder)) {
+            textField.setText(placeholder);
+            textField.setForeground(placeholderForeground);
+        }
+
+        textField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (textField.getText().equals(placeholder)) {
+                    textField.setText("");
+                    textField.setForeground(originalForeground);
+                }
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (textField.getText().isEmpty()) {
+                    textField.setText(placeholder);
+                    textField.setForeground(placeholderForeground);
+                }
+            }
+        });
+    }
+    
+    private void loadData() {
+        tableModel.setRowCount(0); 
+        courseComboBoxModel.removeAllElements(); 
+       
+        String sql = "SELECT kode_mk, nama_mk FROM matakuliah ORDER BY nama_mk"; // Urutkan berdasarkan nama
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            
+            while (rs.next()) {
+                String kodeMk = rs.getString("kode_mk");
+                String namaMk = rs.getString("nama_mk");
+                
+                tableModel.addRow(new Object[]{kodeMk, namaMk});
+                courseComboBoxModel.addElement(new ComboItem(kodeMk, namaMk));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Gagal memuat data mata kuliah: " + e.getMessage(), "Error Database", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    void setButtonActive(JButton currentActiveButton) {
+        JButton[] buttons = {toInsertPanelButton, toUpdatePanelButton, toRemovePanelButton};
+        for (JButton button : buttons) {
+            if (button == currentActiveButton) {
+                button.setBackground(new Color(51, 51, 51)); 
+                button.setForeground(Color.WHITE); 
+            } else {
+                button.setBackground(new Color(78, 80, 82)); 
+                button.setForeground(Color.BLACK); 
+            }
+        }
+        previousButton = currentActiveButton;
+    }
+
+    void setInsert() {
+        setButtonActive(toInsertPanelButton);
+        cl.show(crudPanel, "insertCard");
+        
+        insertCourseCode.setText("Kode Mata Kuliah");
+        insertCourseName.setText("Nama Mata Kuliah");
+        addPlaceholderFocusListener(insertCourseCode, "Kode Mata Kuliah"); 
+        addPlaceholderFocusListener(insertCourseName, "Nama Mata Kuliah"); 
+        
+        revalidate();
+        repaint();
+    }
+
+    void setUpdate() {
+        setButtonActive(toUpdatePanelButton);
+        cl.show(crudPanel, "updateCard");
+        if (courseComboBox.getItemCount() > 0) {
+            courseComboBox.setSelectedIndex(0); 
+            // Listener akan mengisi courseNameField
+        } else {
+            courseNameField.setText(""); // Kosongkan jika tidak ada item
+        }
+        revalidate();
+        repaint();
+    }
+
+    void setRemove() {
+        setButtonActive(toRemovePanelButton);
+        cl.show(crudPanel, "removeCard");
+         if (courseComboBox1.getItemCount() > 0) {
+            courseComboBox1.setSelectedIndex(0);
+            // Listener akan mengisi courseNameField1
+        } else {
+            courseNameField1.setText("");
+        }
+        // courseNameField1.setEditable(false); // Sudah diatur di initComponents
+        revalidate();
+        repaint();
+    }
+
+    void insert(String code, String name) {
+        // Gunakan PreparedStatement untuk keamanan
+        String sql = "INSERT INTO matakuliah (kode_mk, nama_mk) VALUES (?, ?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, code);
+            pstmt.setString(2, name);
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows > 0) {
+                JOptionPane.showMessageDialog(this, "Mata kuliah berhasil ditambahkan!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+                loadData(); // Refresh data
+                
+                // Reset input fields di panel insert
+                insertCourseCode.setText("Kode Mata Kuliah");
+                insertCourseName.setText("Nama Mata Kuliah");
+                addPlaceholderFocusListener(insertCourseCode, "Kode Mata Kuliah");
+                addPlaceholderFocusListener(insertCourseName, "Nama Mata Kuliah");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Gagal menambahkan mata kuliah: " + e.getMessage(), "Error Database", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    void update(String code, String name) {
+        String sql = "UPDATE matakuliah SET nama_mk = ? WHERE kode_mk = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, name);
+            pstmt.setString(2, code);
+            int affectedRows = pstmt.executeUpdate();
+             if (affectedRows > 0) {
+                JOptionPane.showMessageDialog(this, "Mata kuliah berhasil diperbarui!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+                loadData(); // Refresh data
+                // Reset field setelah update jika diinginkan, atau biarkan ComboBox memilih ulang
+                 if (courseComboBox.getItemCount() > 0) {
+                     // Mungkin perlu mencari dan memilih ulang item yang baru diupdate
+                     // Untuk sederhana, bisa set ke index 0 atau biarkan
+                 } else {
+                     courseNameField.setText("");
+                 }
+
+            } else {
+                JOptionPane.showMessageDialog(this, "Mata kuliah dengan kode " + code + " tidak ditemukan.", "Gagal Update", JOptionPane.WARNING_MESSAGE);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Gagal memperbarui mata kuliah: " + e.getMessage(), "Error Database", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    void remove(String code) {
+        String sql = "DELETE FROM matakuliah WHERE kode_mk = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, code);
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows > 0) {
+                JOptionPane.showMessageDialog(this, "Mata kuliah berhasil dihapus!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+                loadData(); // Refresh data
+                // Reset panel remove
+                if (courseComboBox1.getItemCount() > 0) {
+                    courseComboBox1.setSelectedIndex(0);
+                } else {
+                    courseNameField1.setText("");
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "Mata kuliah dengan kode " + code + " tidak ditemukan.", "Gagal Hapus", JOptionPane.WARNING_MESSAGE);
+            }
+        } catch (SQLException e) {
+             if (e.getMessage().toLowerCase().contains("foreign key constraint") || 
+                (e.getSQLState() != null && e.getSQLState().equals("23000"))) { 
+                JOptionPane.showMessageDialog(this, "Gagal menghapus mata kuliah: Mata kuliah ini masih digunakan di tabel nilai.", "Error Relasi Data", JOptionPane.ERROR_MESSAGE);
+            } else {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Gagal menghapus mata kuliah: " + e.getMessage(), "Error Database", JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 
     /**
@@ -71,26 +306,21 @@ public class CourseCRUD extends javax.swing.JPanel {
 
         insertPanel.setBackground(new java.awt.Color(51, 51, 51));
 
-        insertCourseCode.setText("Kode Mata Kuliah");
         insertCourseCode.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 insertCourseCodeActionPerformed(evt);
             }
         });
 
-        insertCourseName.setText("Nama Mata Kuliah");
-
         insertButton.setText("Insert Course");
         insertButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 String code = insertCourseCode.getText();
                 String name = insertCourseName.getText();
-                if (!code.isEmpty() && !name.isEmpty()) {
-                    insert(code, name);
-                    insertCourseCode.setText("");
-                    insertCourseName.setText("");
+                if (code.equals("Kode Mata Kuliah") || name.equals("Nama Mata Kuliah") || code.isEmpty() || name.isEmpty()) {
+                    JOptionPane.showMessageDialog(insertPanel, "Kode dan Nama Mata Kuliah tidak boleh kosong atau placeholder", "Error Input", JOptionPane.ERROR_MESSAGE);
                 } else {
-                    JOptionPane.showMessageDialog(insertPanel, "Please fill in all fields", "Error", JOptionPane.ERROR_MESSAGE);
+                    insert(code, name);
                 }
             }
         });
@@ -127,32 +357,21 @@ public class CourseCRUD extends javax.swing.JPanel {
                 if (selectedItem != null) {
                     String code = selectedItem.getKey();
                     String name = courseNameField.getText();
-                    if (!name.isEmpty()) {
-                        update(code, name);
-                        courseNameField.setText("");
+                    if (name.isEmpty() || name.equals("Nama Mata Kuliah")) { // Tambahkan pengecekan placeholder
+                        JOptionPane.showMessageDialog(updatePanel, "Nama Mata Kuliah tidak boleh kosong", "Error Input", JOptionPane.ERROR_MESSAGE);
                     } else {
-                        JOptionPane.showMessageDialog(updatePanel, "Please enter a course name", "Error", JOptionPane.ERROR_MESSAGE);
+                        update(code, name);
                     }
                 } else {
-                    JOptionPane.showMessageDialog(updatePanel, "Please select a course to update", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(updatePanel, "Pilih mata kuliah yang akan diupdate", "Error Seleksi", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
 
-        modelCombo = new DefaultComboBoxModel<>();
-        courseComboBox.setModel(modelCombo);
+        // courseComboBoxModel sudah di-set di konstruktor
+        // courseComboBox.setModel(courseComboBoxModel);
         courseComboBox.setPreferredSize(new java.awt.Dimension(72, 30));
-        courseComboBox.addItemListener(new ItemListener() {
-            public void itemStateChanged(ItemEvent evt) {
-                if (evt.getStateChange() == ItemEvent.SELECTED) {
-                    ComboItem selectedItem = (ComboItem) courseComboBox.getSelectedItem();
-                    if (selectedItem != null) {
-                        courseNameField.setText(selectedItem.getValue());
-                    }
-                }
-                
-            }
-        });
+        // Listener sudah dipindah ke addItemListenersToCourseComboBoxes()
 
         javax.swing.GroupLayout updatePanelLayout = new javax.swing.GroupLayout(updatePanel);
         updatePanel.setLayout(updatePanelLayout);
@@ -178,8 +397,9 @@ public class CourseCRUD extends javax.swing.JPanel {
 
         removePanel.setBackground(new java.awt.Color(51, 51, 51));
         removePanel.setPreferredSize(new java.awt.Dimension(607, 66));
-        //course name field1 uneditable
+
         courseNameField1.setEditable(false);
+        courseNameField1.setBackground(new java.awt.Color(204, 204, 204)); // Warna abu-abu untuk field non-editable
 
         removeCourseButton.setText("Remove Course");
         removeCourseButton.addActionListener(new java.awt.event.ActionListener() {
@@ -187,27 +407,22 @@ public class CourseCRUD extends javax.swing.JPanel {
                 ComboItem selectedItem = (ComboItem) courseComboBox1.getSelectedItem();
                 if (selectedItem != null) {
                     String code = selectedItem.getKey();
-                    remove(code);
-                    courseNameField1.setText("");
-                    loadTable(); // Refresh the table after deletion
+                     int confirm = JOptionPane.showConfirmDialog(removePanel, 
+                        "Anda yakin ingin menghapus mata kuliah: " + selectedItem.getValue() + " (" + code + ")?",
+                        "Konfirmasi Hapus", JOptionPane.YES_NO_OPTION);
+                    if (confirm == JOptionPane.YES_OPTION) {
+                        remove(code);
+                    }
                 } else {
-                    JOptionPane.showMessageDialog(removePanel, "Please select a course to remove", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(removePanel, "Pilih mata kuliah yang akan dihapus", "Error Seleksi", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
 
-        courseComboBox1.setModel(modelCombo);
+        // courseComboBoxModel sudah di-set di konstruktor
+        // courseComboBox1.setModel(courseComboBoxModel);
         courseComboBox1.setPreferredSize(new java.awt.Dimension(72, 30));
-        courseComboBox1.addItemListener(new ItemListener() {
-            public void itemStateChanged(ItemEvent evt) {
-                if (evt.getStateChange() == ItemEvent.SELECTED) {
-                    ComboItem selectedItem = (ComboItem) courseComboBox1.getSelectedItem();
-                    if (selectedItem != null) {
-                        courseNameField1.setText(selectedItem.getValue());
-                    }
-                }
-            }
-        });
+        // Listener sudah dipindah ke addItemListenersToCourseComboBoxes()
 
         javax.swing.GroupLayout removePanelLayout = new javax.swing.GroupLayout(removePanel);
         removePanel.setLayout(removePanelLayout);
@@ -240,6 +455,7 @@ public class CourseCRUD extends javax.swing.JPanel {
         });
 
         toInsertPanelButton.setBackground(new java.awt.Color(51, 51, 51));
+        toInsertPanelButton.setForeground(Color.WHITE);
         toInsertPanelButton.setText("Insert Data");
         toInsertPanelButton.setPreferredSize(new java.awt.Dimension(180, 30));
         toInsertPanelButton.addActionListener(new java.awt.event.ActionListener() {
@@ -257,49 +473,9 @@ public class CourseCRUD extends javax.swing.JPanel {
         });
 
         courseTable.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(153, 153, 153), 1, true));
-        model = new javax.swing.table.DefaultTableModel(
+        courseTable.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null},
-                {null, null}
+
             },
             new String [] {
                 "Kode MK", "Nama"
@@ -319,9 +495,8 @@ public class CourseCRUD extends javax.swing.JPanel {
             public boolean isCellEditable(int rowIndex, int columnIndex) {
                 return canEdit [columnIndex];
             }
-        };
-        courseTable.setModel(model);
-        courseTable.setEnabled(false);
+        });
+        // courseTable.setEnabled(false); // Sebaiknya true agar bisa dipilih, tapi tidak bisa diedit selnya
         courseTable.setGridColor(new java.awt.Color(153, 153, 153));
         courseTable.setPreferredSize(new java.awt.Dimension(150, 607));
         courseTable.setSelectionForeground(new java.awt.Color(153, 153, 153));
@@ -337,12 +512,12 @@ public class CourseCRUD extends javax.swing.JPanel {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
                     .addComponent(crudPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(toInsertPanelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 214, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(toUpdatePanelButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(toRemovePanelButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(scrollPanel))
+                        .addComponent(toInsertPanelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 197, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(toUpdatePanelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 196, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(toRemovePanelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 196, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(scrollPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 598, Short.MAX_VALUE))
                 .addGap(15, 15, 15))
         );
         layout.setVerticalGroup(
@@ -356,7 +531,8 @@ public class CourseCRUD extends javax.swing.JPanel {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(crudPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(scrollPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 486, Short.MAX_VALUE))
+                .addComponent(scrollPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 480, Short.MAX_VALUE)
+                .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -365,109 +541,20 @@ public class CourseCRUD extends javax.swing.JPanel {
     }//GEN-LAST:event_insertCourseCodeActionPerformed
 
     private void toInsertPanelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_toInsertPanelButtonActionPerformed
-        // TODO add your handling code here:
         setInsert();
     }//GEN-LAST:event_toInsertPanelButtonActionPerformed
 
     private void toUpdatePanelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_toUpdatePanelButtonActionPerformed
-        // TODO add your handling code here:
         setUpdate();
     }//GEN-LAST:event_toUpdatePanelButtonActionPerformed
 
     private void toRemovePanelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_toRemovePanelButtonActionPerformed
-        // TODO add your handling code here:
         setRemove();
     }//GEN-LAST:event_toRemovePanelButtonActionPerformed
-    
-    void setInsert(){
-       toInsertPanelButton.setBackground(new Color(51,51,51));
-       if(previousButton!=null)
-       previousButton.setBackground(new Color(78,80,82));
-       cl.show(crudPanel, "insertCard");
-       previousButton=toInsertPanelButton;
-       revalidate();
-       repaint();
-    }
-    void setUpdate(){
-       toUpdatePanelButton.setBackground(new Color(51,51,51));
-       if(previousButton!=null)
-       previousButton.setBackground(new Color(78,80,82));
-       cl.show(crudPanel, "updateCard");
-       previousButton=toUpdatePanelButton;
-       revalidate();
-       repaint();
-    }
-    
-    void setRemove(){
-        toRemovePanelButton.setBackground(new Color(51,51,51));
-       if(previousButton!=null)
-        previousButton.setBackground(new Color(78,80,82));
-       cl.show(crudPanel, "removeCard");
-       previousButton=toRemovePanelButton;
-       revalidate();
-       repaint();
-    }
 
-    void loadTable(){
-        model.setRowCount(0); // Clear existing rows
-        try {
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT kode_mk, nama_mk FROM matakuliah");
-            model.setRowCount(0); // Clear existing rows
-            modelCombo.removeAllElements(); // Clear existing items in the combo box model
-            while (rs.next()) {
-                String kodeMk = rs.getString("kode_mk");
-                String namaMk = rs.getString("nama_mk");
-                model.addRow(new Object[]{kodeMk, namaMk});
-                modelCombo.addElement(new ComboItem(kodeMk, namaMk));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-    }
-    }
-    
-    void insert(String code,String name){
-        try{
-            Statement stmt = conn.createStatement();
-            String sql = "INSERT INTO matakuliah (kode_mk, nama_mk) VALUES ('" + code + "', '" + name + "')";
-            stmt.executeUpdate(sql);
-            loadTable(); // Refresh the table after insertion
-        } catch (Exception e){
-
-        }
-    }
-
-    void update(String code, String name){
-        try {
-            
-            String sql = "UPDATE matakuliah SET nama_mk = ? WHERE kode_mk = ?";
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, name);
-            pstmt.setString(2, code);
-            pstmt.executeUpdate();
-            loadTable(); // Refresh the table after update
-        } catch (SQLException e) {
-            e.printStackTrace();
-    }
-        }
-    
-    void remove(String code){
-        try {
-            Statement stmt = conn.createStatement();
-            String sql = "DELETE FROM matakuliah WHERE kode_mk = '" + code + "'";
-            stmt.executeUpdate(sql);
-            loadTable(); // Refresh the table after deletion
-        } catch (SQLException e) {
-            e.printStackTrace();
-    }
-    }
-    private javax.swing.JButton previousButton; 
-    private CardLayout cl;
-    private DefaultTableModel model;
-    private DefaultComboBoxModel<ComboItem> modelCombo;
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JComboBox<ComboItem> courseComboBox;
-    private javax.swing.JComboBox<ComboItem> courseComboBox1;
+    private javax.swing.JComboBox<basdatbab13.ComboItem> courseComboBox;
+    private javax.swing.JComboBox<basdatbab13.ComboItem> courseComboBox1;
     private javax.swing.JTextField courseNameField;
     private javax.swing.JTextField courseNameField1;
     private javax.swing.JTable courseTable;
